@@ -24,7 +24,7 @@ errtype intermediate_code_generate(FILE *input, FILE *output){
 			
 			case '0':
 				fgetc(input);
-				num  = get_hex_number(input);
+				num  = get_hex_number(input, line);
 				fprintf(output, "mov *%s_back %%%x\n", in_arg!=0 ? "arg" : "cur", num);
 				break;
 			
@@ -42,7 +42,7 @@ errtype intermediate_code_generate(FILE *input, FILE *output){
 			
 			case ',':
 				fprintf(output, "inc %s_back\n", in_arg!=0 ? "arg" : "cur");
-				fprintf(output, "mov *%s_back %%-%x\n", in_arg!=0 ? "arg" : "cur", -1);
+				fprintf(output, "mov *%s_back %%-%x\n", in_arg!=0 ? "arg" : "cur", 1);
 				break;
 			
 			case ';':
@@ -103,13 +103,15 @@ int8_t *get_identifier(FILE *input, int32_t line){
 
 }
 
-uint8_t get_hex_number(FILE *input){
+uint8_t get_hex_number(FILE *input, int32_t line){
 	uint8_t num = 0;
 	int8_t ch = fgetc(input);
 
 	ch = fgetc(input);
 
 	while (!feof(input)){
+		uint8_t lst_num = num;
+
 		switch (ch){
 			case '.':
 			case ',':
@@ -125,6 +127,8 @@ uint8_t get_hex_number(FILE *input){
 					return num;
 				num *= 16;
 				num += get_num(ch);
+				if (num < lst_num)
+					put_error(WARNING, line, -1, "Unsigned 8 bit integer overflow.");
 				break;
 			
 		}
